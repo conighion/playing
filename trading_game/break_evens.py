@@ -107,9 +107,6 @@ def get_random_notional() -> tuple:
     return notional, notional_print
 
 
-def practice_basis_points_basic() -> str:
-
-
 def practice_basis_points() -> str:
     notional, notional_print = get_random_notional()
     bps = random.randint(1, 100)
