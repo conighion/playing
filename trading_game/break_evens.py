@@ -1,12 +1,12 @@
 import random
 from timeit import default_timer as timer
-from typing import Tuple
 
 _GAME_LIST_DIC = {
     1: 'Find the vega [bps] per tenor',
     2: 'Calculate Break Evens',
-    3: 'Practice basis points',
-    4: 'Convert Notionals to Vegas'
+    3: 'Practic basis points',
+    4: 'Practice basis points (advanced)',
+    5: 'Convert Notionals to Vegas'
 }
 
 _TENOR_CHOICES = ["O/N", "1-week", "1-month", "3-months", "6-months", "1-year"]
@@ -20,7 +20,7 @@ def vega_bps_game() -> str:
 
     while True:
         try:
-            user_reply_vega = input("What is the vega in bps for {}?".format(tenor_vega))
+            user_reply_vega = input("What is the vega in bps for {}? ".format(tenor_vega))
 
             # Check if input is to stop the game. Otherwise try to parse the input.
             if user_reply_vega.lower() == "stop":
@@ -54,7 +54,7 @@ def calc_break_even() -> str:
 
     while True:
         try:
-            msg = "The {tenor} vol is {vol}. What is the break-even?".format(tenor=tenor_vega, vol=vol)
+            msg = "The {tenor} vol is {vol}. What is the break-even? ".format(tenor=tenor_vega, vol=vol)
             start = timer()
             user_reply_be = input(msg)
             end = timer()
@@ -107,14 +107,14 @@ def get_random_notional() -> tuple:
     return notional, notional_print
 
 
-def practice_basis_points() -> str:
+def practice_basis_points(basic=False) -> str:
     notional, notional_print = get_random_notional()
-    bps = random.randint(1, 100)
+    bps = random.sample([1, 10, 100], k=1)[0] if basic else random.randint(1, 100)
     correct_number = bps/10000*notional
 
     while True:
         try:
-            msg = "What is {bps} bps of {notional}?".\
+            msg = "What is {bps} bps of {notional}? ".\
                 format(bps=bps, notional=notional_print)
             start = timer()
             user_reply = input(msg)
@@ -132,10 +132,12 @@ def practice_basis_points() -> str:
             time_lapsed = end - start
 
             # Percentage threshold for a correct answer is 5%.
-            correct_or_wrong = "Correct" if correct_number == user_reply else "Wrong"
-            computer_reply = "{}! It's {:.2f}. It took you {:.2f}s. \n".format(
+            off_pct = abs(user_reply - correct_number)/correct_number*100
+            correct_or_wrong = "Correct" if off_pct <= 10 else "Wrong"
+            computer_reply = "{}! It's {:,.2f}. You were {:.1f}% off and it took you {:.2f}s. \n".format(
                 correct_or_wrong,
                 correct_number,
+                off_pct,
                 time_lapsed
             )
             print(computer_reply)
@@ -147,6 +149,10 @@ def practice_basis_points() -> str:
     return "continue"
 
 
+def practice_basis_points_basic() -> str:
+    return practice_basis_points(True)
+
+
 def convert_notional_to_vega() -> str:
     notional, notional_print = get_random_notional()
     random_index = random.randint(0, len(_TENOR_CHOICES) - 1)
@@ -155,7 +161,7 @@ def convert_notional_to_vega() -> str:
 
     while True:
         try:
-            msg = "What is the vega of a {tenor} vanilla option with notional {notional}?".\
+            msg = "What is the vega of a {tenor} vanilla option with notional {notional}? ".\
                 format(tenor=tenor, notional=notional_print)
             start = timer()
             user_reply = input(msg)
@@ -189,12 +195,11 @@ def convert_notional_to_vega() -> str:
 
 
 def game_chooser_menu() -> int:
-    print("\nGames available: ")
-    for item, amount in _GAME_LIST_DIC.items():
-        print("  {}: {}.".format(item, amount))
-
     while True:
         try:
+            print("\nGames available: ")
+            for item, amount in _GAME_LIST_DIC.items():
+                print("  {}: {}.".format(item, amount))
             user_reply_be = input()
 
             game_input = int(user_reply_be)
@@ -214,8 +219,9 @@ def game_chooser_menu() -> int:
 _GAME_LIST_FNS = {
     1: vega_bps_game,
     2: calc_break_even,
-    3: practice_basis_points,
-    4: convert_notional_to_vega
+    3: practice_basis_points_basic,
+    4: practice_basis_points,
+    5: convert_notional_to_vega
 }
 
 
@@ -229,10 +235,17 @@ def play() -> None:
     game_input = game_chooser_menu()
 
     while True:
-
         game_output = game_chooser(game_input)
 
         if game_output == "stop":
             game_input = game_chooser_menu()
         elif game_output == "exit":
             return None
+
+
+def main():
+    play()
+
+
+if __name__ == "__main__":
+    main()
