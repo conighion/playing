@@ -1,10 +1,11 @@
 import random
 from timeit import default_timer as timer
+from typing import Tuple
 
 _GAME_LIST_DIC = {
     1: 'Find the vega [bps] per tenor',
     2: 'Calculate Break Evens',
-    3: 'Convert Vegas to Notionals',
+    3: 'Practice basis points',
     4: 'Convert Notionals to Vegas'
 }
 
@@ -25,20 +26,22 @@ def vega_bps_game() -> str:
             if user_reply_vega.lower() == "stop":
                 return "stop"
 
+            if user_reply_vega.lower() == "exit":
+                return "exit"
+
             user_reply_vega = int(user_reply_vega)
+
+            correct_or_wrong = "Correct" if correct_vega == user_reply_vega else "Wrong"
+            computer_reply_vega = "{}! The vega for {} is {} bps.\n".format(
+                correct_or_wrong,
+                tenor_vega,
+                correct_vega
+            )
+            print(computer_reply_vega)
         except ValueError:
             print("Invalid reply. Please try again.")
             continue
         break
-
-    correct_or_wrong = "Correct" if correct_vega == user_reply_vega else "Wrong"
-    computer_reply_vega = "{}! The vega for {} is {} bps.".format(
-        correct_or_wrong,
-        tenor_vega,
-        correct_vega
-    )
-    print(computer_reply_vega)
-    print("\n")
 
     return "continue"
 
@@ -49,66 +52,158 @@ def calc_break_even() -> str:
     correct_vega = _VEGAS_BPS_PER_TENOR[random_index]
     vol = random.randint(30, 200)/10
 
-    start = timer()
     while True:
         try:
             msg = "The {tenor} vol is {vol}. What is the break-even?".format(tenor=tenor_vega, vol=vol)
+            start = timer()
             user_reply_be = input(msg)
+            end = timer()
 
             # Check if input is to stop the game. Otherwise try to parse the input.
             if user_reply_be.lower() == "stop":
                 return "stop"
 
+            if user_reply_be.lower() == "exit":
+                return "exit"
+
+            # If not check the answer and print the reply
             user_reply_be = float(user_reply_be)
+            time_lapsed = end - start
+            correct_be = correct_vega * vol / 100 * 2
+            diff_pct = (user_reply_be - correct_be) / correct_be * 100
+
+            # Percentage threshold for a correct answer is 5%.
+            msg_timer = "It took you {:.2f}s. \n".format(time_lapsed)
+            if abs(diff_pct) < 2:
+                print("Correct! The break-even is {:.2f}%. ".format(correct_be) + msg_timer)
+            else:
+                if diff_pct > 0:
+                    diff_act = user_reply_be - correct_be
+                    print("Yours! You were higher by {:.2f}%; the b/e is {:.2f}%. ".format(diff_act,
+                                                                                           correct_be) + msg_timer)
+                else:
+                    diff_act = correct_be - user_reply_be
+                    print("Mine! You were lower by {:.2f}%; the b/e is {:.2f}%. ".format(diff_act,
+                                                                                         correct_be) + msg_timer)
         except ValueError:
             print("Invalid reply. Please try again.")
             continue
         break
 
-    end = timer()
-    time_lapsed = end - start
-    correct_be = correct_vega*vol/100*2
-    diff_pct = (user_reply_be - correct_be)/correct_be*100
-
-    # Percentage threshold for a correct answer is 5%.
-    msg_timer = "It took you {:.2f}s.".format(time_lapsed)
-    if abs(diff_pct) < 2:
-        print("Correct! The break-even is {:.2f}%. ".format(correct_be) + msg_timer)
-    else:
-        if diff_pct > 0:
-            diff_act = user_reply_be - correct_be
-            print("Yours! You were higher by {:.2f}%; the b/e is {:.2f}%. ".format(diff_act, correct_be) + msg_timer)
-        else:
-            diff_act = correct_be - user_reply_be
-            print("Mine! You were lower by {:.2f}%; the b/e is {:.2f}%. ".format(diff_act, correct_be) + msg_timer)
-
-    # Add new line
-    print("\n")
     return "continue"
 
 
-def convert_vega_to_notional() -> str:
+def get_random_notional() -> tuple:
+    mill_mapping = {
+        'K': 1000,
+        'Mio': 1000000,
+        'Bn': 1000000000
+    }
+    leading_number = random.randint(2, 19)/2
+    mill_name = random.sample(mill_mapping.keys(), 1)[0]
+    notional = leading_number*mill_mapping[mill_name]
+    notional_print = "{} {}".format(leading_number, mill_name)
+
+    return notional, notional_print
+
+
+def practice_basis_points_basic() -> str:
+
+
+def practice_basis_points() -> str:
+    notional, notional_print = get_random_notional()
+    bps = random.randint(1, 100)
+    correct_number = bps/10000*notional
+
+    while True:
+        try:
+            msg = "What is {bps} bps of {notional}?".\
+                format(bps=bps, notional=notional_print)
+            start = timer()
+            user_reply = input(msg)
+            end = timer()
+
+            # Check if input is to stop the game. Otherwise try to parse the input.
+            if user_reply.lower() == "stop":
+                return "stop"
+
+            if user_reply.lower() == "exit":
+                return "exit"
+
+            # If not check the answer and print the reply
+            user_reply = float(user_reply)
+            time_lapsed = end - start
+
+            # Percentage threshold for a correct answer is 5%.
+            correct_or_wrong = "Correct" if correct_number == user_reply else "Wrong"
+            computer_reply = "{}! It's {:.2f}. It took you {:.2f}s. \n".format(
+                correct_or_wrong,
+                correct_number,
+                time_lapsed
+            )
+            print(computer_reply)
+        except ValueError:
+            print("Invalid reply. Please try again.")
+            continue
+        break
+
     return "continue"
 
 
 def convert_notional_to_vega() -> str:
+    notional, notional_print = get_random_notional()
+    random_index = random.randint(0, len(_TENOR_CHOICES) - 1)
+    tenor = _TENOR_CHOICES[random_index]
+    correct_vega = _VEGAS_BPS_PER_TENOR[random_index]*notional/10000
+
+    while True:
+        try:
+            msg = "What is the vega of a {tenor} vanilla option with notional {notional}?".\
+                format(tenor=tenor, notional=notional_print)
+            start = timer()
+            user_reply = input(msg)
+            end = timer()
+
+            # Check if input is to stop the game. Otherwise try to parse the input.
+            if user_reply.lower() == "stop":
+                return "stop"
+
+            if user_reply.lower() == "exit":
+                return "exit"
+
+            # If not check the answer and print the reply
+            user_reply = float(user_reply)
+            time_lapsed = end - start
+
+            # Percentage threshold for a correct answer is 5%.
+            correct_or_wrong = "Correct" if correct_vega == user_reply else "Wrong"
+            computer_reply = "{}! The vega is {:.2f}. It took you {:.2f}s. \n".format(
+                correct_or_wrong,
+                correct_vega,
+                time_lapsed
+            )
+            print(computer_reply)
+        except ValueError:
+            print("Invalid reply. Please try again.")
+            continue
+        break
+
     return "continue"
 
 
 def game_chooser_menu() -> int:
-    print("Games available: ")
+    print("\nGames available: ")
     for item, amount in _GAME_LIST_DIC.items():
         print("  {}: {}.".format(item, amount))
 
     while True:
         try:
-            game_input = int(input())
+            user_reply_be = input()
 
-            # Check if input is to stop the game. Otherwise try to parse the input.
+            game_input = int(user_reply_be)
             if game_input in _GAME_LIST_DIC:
-                print("\nYou are playing '{}'.".format(_GAME_LIST_DIC[game_input]))
-                print("To return to the game selection mode type 'stop'.")
-                print("\n\n")
+                print("You are playing '{}'.".format(_GAME_LIST_DIC[game_input]))
+                print("To return to the game selection mode type 'stop'.\n")
                 return game_input
             else:
                 print("Invalid game entry. Please try again.")
@@ -122,13 +217,13 @@ def game_chooser_menu() -> int:
 _GAME_LIST_FNS = {
     1: vega_bps_game,
     2: calc_break_even,
-    3: convert_vega_to_notional,
+    3: practice_basis_points,
     4: convert_notional_to_vega
 }
 
 
 def game_chooser(game_input: int) -> str:
-    # Get the§ function from switcher dictionary
+    # Get the function from the switcher dictionary
     func = _GAME_LIST_FNS.get(game_input, lambda: "Invalid game function.")
     return func()
 
@@ -142,3 +237,5 @@ def play() -> None:
 
         if game_output == "stop":
             game_input = game_chooser_menu()
+        elif game_output == "exit":
+            return None
